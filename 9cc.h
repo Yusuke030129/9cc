@@ -53,6 +53,7 @@ typedef enum {
   ND_LE,  // <=
   ND_RETURN, // "return"
   ND_NUM, // 整数 integer
+  ND_EXPR_STMT,   // Expression statement
 } NodeKind;
 
 typedef struct Node Node;

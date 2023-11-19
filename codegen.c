@@ -12,6 +12,10 @@ void gen(Node *node) {
       printf("  pop rax\n");
       printf("  ret\n");
       return;
+    case ND_EXPR_STMT:
+      gen(node->lhs);
+      printf("  add rsp, 8\n"); // 前回のpopで捨てるのと同じ動作(raxには結果がロードされたまま)。最後の文ならばcopdegen()のforを抜けてロードされているraxをそのままretで返す。
+      return;
 }
 
   gen(node->lhs); // AST NODE の先頭の数値までGO(先頭ノードの数値をPRINTF PUSH→gen(node->rhs)→以下pripopriposwitch 最後に  pripuを 末尾ノードまでN回繰り返し)
@@ -72,7 +76,7 @@ void codegen(Node *node) {
    (Node *) n;
 #endif
  gen(n);
- printf("  pop rax\n"); // 複文ならばラスト文以外の結果は捨てるということか？
+//  printf("  pop rax\n"); // 複文ならばラスト文以外の結果は捨てるということか？
   }
  printf("  ret\n");
 }
