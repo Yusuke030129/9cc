@@ -8,6 +8,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+//
+//  tokenize.c
+//
+
 // トークンの種類
 typedef enum {
   TK_RESERVED, // 記号
@@ -33,6 +38,7 @@ extern Token *token;
 void error(char *fmt, ...) ;
 void error_at(char *loc, char *fmt, ...);
 bool consume(char *op);
+char *strndup(char *p, int len);
 Token *consume_ident();
 void expect(char *op);
 int expect_number();
@@ -43,6 +49,21 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len);
 bool startwith(char *p, char *q);
 Token *tokenize(char *p);
 
+
+//
+// parse.c
+//
+
+// Local variable
+typedef struct Var Var;
+
+struct Var {
+    Var *next;
+    char *name; // Variable name
+    int offset; // Offset from RBP
+};
+
+// AST node 
 typedef enum {
   ND_ADD,       // +
   ND_SUB,       // -
@@ -55,9 +76,10 @@ typedef enum {
   ND_ASSIGN,    // =
   ND_RETURN,    // "return"
   ND_EXPR_STMT, // Expression statement
-  ND_LVAR,      // Local variable 
+  ND_VAR,       //  Variable 
   ND_NUM,       // 整数 integer
 } NodeKind;
+
 
 typedef struct Node Node;
 
@@ -67,16 +89,28 @@ struct Node {
   Node *next;
   Node *lhs;     // 左辺
   Node *rhs;     // 右辺
-  char name;     // if Used if kind == ND_LVAR
+//  char name;   // if Used if kind == ND_LVAR
+  Var *var;     // if Used if kind == ND_LVAR
   int val;       // kindがND_NUMの場合のみ使う
 };
+
+typedef struct {
+    Node *node; 
+    Var *locals;
+    int stack_size;
+    } Program;
+
 
 Node *new_node(NodeKind kind);
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_num(int val);
 
-Node *program();
+Program  *program();
+
+//
+// codegen.c
+//
 
 void gen(Node *node);
-void codegen(Node *node);
+void codegen(Program *prog);
 #endif

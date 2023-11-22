@@ -4,9 +4,8 @@
 
 // Pushes the given node's address to the stack.
 void gen_addr(Node *node) {
-  if (node->kind  == ND_LVAR) {
-    int offset = (node->name - 'a' + 1) * 8;
-    printf("  lea rax, [rbp-%d]\n", offset);
+  if (node->kind  == ND_VAR) {
+    printf("  lea rax, [rbp-%d]\n", node->var->offset);
     printf("  push rax\n");
     return;
   }
@@ -38,7 +37,7 @@ void gen(Node *node) {
       gen(node->rhs);
       store();
       return;
-    case ND_LVAR:
+    case ND_VAR:
       gen_addr(node);
       load();
       return;
@@ -100,7 +99,7 @@ void gen(Node *node) {
 }
 
 
-void codegen(Node *node) {
+void codegen(Program *prog) {
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
   printf("main:\n");
@@ -108,16 +107,16 @@ void codegen(Node *node) {
   // prologue
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, 208\n");
+  printf("  sub rsp, %d\n", prog->stack_size);
 
-
-  for (Node *n = node; n; n = n->next) {
+  // Emit code ※ prog->node ==  head.next
+  for (Node *node = prog->node; node; node = node->next) {
 #ifdef DEBUG
-    n->next == 0 ? printf("True\n"): printf("False\n") ;
-    printf("アドレス= %p\n", n);
-    (Node *) n;
+    node->next == 0 ? printf("True\n"): printf("False\n") ;
+    printf("アドレス= %p\n", node);
+    (Node *) node;
 #endif
-    gen(n);
+    gen(node);
   //printf("  pop rax\n"); // 複文ならばラスト文以外の結果は捨てるということか？
   }
   // epilogue
