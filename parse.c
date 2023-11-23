@@ -36,6 +36,12 @@ Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
   return node;
 }
 
+Node *new_unary(NodeKind kind, Node *expr) {
+    Node *node = new_node(kind);
+    node->lhs = expr;
+    return node;
+}
+
 Node *new_num(int val) {
   Node *node = new_node(ND_NUM);
   node->val = val;
@@ -78,14 +84,12 @@ Program *program() {
   return prog;
 }
 
-
-Node *new_unary(NodeKind kind, Node *expr) {
-    Node *node = new_node(kind);
-    node->lhs = expr;
-    return node;
+Node *read_expr_stmt() {
+    return new_unary(ND_EXPR_STMT, expr());
 }
 
 // stmt = "return" expr ";"
+//      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | expr ";"
 Node *stmt() {
   if (consume("return")) {
@@ -94,11 +98,21 @@ Node *stmt() {
       return node;
   }
 
-  Node *node = new_unary(ND_EXPR_STMT, expr());
+  if (consume("if")) {
+    Node *node = new_node(ND_IF);
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    node->then = stmt();
+    if (consume("else"))
+      node->els = stmt();
+    return node;
+  }
+
+  Node *node = read_expr_stmt();
   expect(";");
   return node;
 }
-
 
 // -expr = equality
 // +expr = assign

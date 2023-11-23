@@ -46,7 +46,7 @@ bool at_eof();
 
 
 Token *new_token(TokenKind kind, Token *cur, char *str, int len);
-bool startwith(char *p, char *q);
+bool startswith(char *p, char *q);
 Token *tokenize(char *p);
 
 
@@ -75,6 +75,7 @@ typedef enum {
   ND_LE,        // <=
   ND_ASSIGN,    // =
   ND_RETURN,    // "return"
+  ND_IF,        // "if"
   ND_EXPR_STMT, // Expression statement
   ND_VAR,       //  Variable 
   ND_NUM,       // 整数 integer
@@ -87,8 +88,15 @@ typedef struct Node Node;
 struct Node {
   NodeKind kind; // ノードの型
   Node *next;
+
   Node *lhs;     // 左辺
   Node *rhs;     // 右辺
+
+  // "if" statement
+  Node *cond;
+  Node *then;
+  Node *els;
+
 //  char name;   // if Used if kind == ND_LVAR
   Var *var;     // if Used if kind == ND_LVAR
   int val;       // kindがND_NUMの場合のみ使う

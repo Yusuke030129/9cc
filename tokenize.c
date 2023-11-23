@@ -92,7 +92,7 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 }
 
 
-bool startwith(char *p, char *q)
+bool startswith(char *p, char *q)
 {
    return memcmp(p, q, strlen(q)) == 0;
 }
@@ -104,6 +104,28 @@ bool is_alpha(char c) {
 
 bool is_alnum(char c) {
    return is_alpha(c) || ( '0' <= c  && c <= '9');
+}
+
+
+// 
+char *starts_with_reserved(char *p) {
+  // Keyword
+  // 静的なローカル変数を初期化子で初期化 静的なローカル変数の初期化は初回のみ行われる
+  static char *kw[] = {"return", "if", "else"};
+
+  for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
+     int len = strlen(kw[i]);
+     if (startswith(p, kw[i]) && !is_alnum(p[len]))
+       return kw[i];
+  }
+  // Multi-letter punctuator
+  static char *ops[] = { "==", "!=", "<=", ">="};
+
+  for (int i = 0; i < sizeof(ops) / sizeof(*ops); i++) {
+      if (startswith(p, ops[i]))
+          return ops[i];
+  }
+  return NULL;
 }
 
 // 入力文字列pをトークナイズしてそれを返す
@@ -118,18 +140,25 @@ Token *tokenize(char *p) {
       p++;
       continue;
     }
-    // keyword
-    if (startwith(p, "return") && !is_alnum(p[6])) {
-       cur  = new_token(TK_RESERVED, cur, p, 6);
-       p += 6;
-       continue;
-    }
+//    // keyword
+//    if (startswith(p, "return") && !is_alnum(p[6])) {
+//       cur  = new_token(TK_RESERVED, cur, p, 6);
+//       p += 6;
+//       continue;
+//    }
+//
+//    if ( startswith(p, "==") || startswith(p, "!=")  || startswith(p, "<=") || startswith(p, ">=") ) {
+//      cur = new_token(TK_RESERVED, cur, p, 2); // length 2
+//      p += 2; // ポインタ演算 アドレスを2つ進める p++++はできないもよう
 
-    if ( startwith(p, "==") || startwith(p, "!=")  || startwith(p, "<=") || startwith(p, ">=") ) {
-      cur = new_token(TK_RESERVED, cur, p, 2); // length 2
-      p += 2; // ポインタ演算 アドレスを2つ進める p++++はできないもよう
-      continue;
-     }
+      // Keyword or multi-letter punctuator
+      char *kw = starts_with_reserved(p);
+      if (kw) {
+        int len = strlen(kw);
+        cur = new_token(TK_RESERVED, cur, p, len);
+        p += len;
+        continue;
+      }
 
     if (strchr("+-*/()<>;=", *p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1); // length 1
