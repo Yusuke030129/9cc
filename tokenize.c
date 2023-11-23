@@ -115,7 +115,7 @@ bool is_alnum(char c) {
 char *starts_with_reserved(char *p) {
   // Keyword
   // 静的なローカル変数を初期化子で初期化 静的なローカル変数の初期化は初回のみ行われる
-  static char *kw[] = {"return", "if", "else", "while"};
+  static char *kw[] = {"return", "if", "else", "while", "for"};
 
   for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
      int len = strlen(kw[i]);
