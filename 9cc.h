@@ -42,6 +42,7 @@ char *strndup(char *p, int len);
 Token *consume_ident();
 void expect(char *op);
 int expect_number();
+char *expect_ident();
 bool at_eof();
 
 
@@ -115,23 +116,26 @@ struct Node {
   int val;       // kindがND_NUMの場合のみ使う
 };
 
-typedef struct {
+typedef struct Function Function;
+struct Function {
+    Function *next;
+    char *name;
     Node *node; 
     Var *locals;
     int stack_size;
-    } Program;
+    };
 
 
 Node *new_node(NodeKind kind);
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_num(int val);
 
-Program  *program();
+Function  *program();
 
 //
 // codegen.c
 //
 
 void gen(Node *node);
-void codegen(Program *prog);
+void codegen(Function *prog);
 #endif

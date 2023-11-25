@@ -1,8 +1,9 @@
 #include "9cc.h"
 
-int labelseq = 0;
 char *argreg[] = { "rdi", "rsi", "rdx", "rcx", "r8", "r9" };
 
+int labelseq = 0;
+char *funcname;
 // 次のgen関数はこの手法をそのままCの関数で実装したものです。
 
 // Pushes the given node's address to the stack.
@@ -132,8 +133,9 @@ void gen(Node *node) {
     case ND_RETURN:
       gen(node->lhs);
       printf("  pop rax\n");
-//      printf("  ret\n");
-      printf("  jmp .Lreturn\n");
+//     - printf("  ret\n");
+//    -- printf("  jmp .Lreturn\n");
+      printf("  jmp .Lreturn.%s\n", funcname);
       return;
     case ND_EXPR_STMT:
       gen(node->lhs);
@@ -187,18 +189,20 @@ void gen(Node *node) {
 }
 
 
-void codegen(Program *prog) {
+void codegen(Function *prog) {
   printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("main:\n");
+  for (Function *fn = prog; fn; fn = fn->next) {
+    printf(".global %s\n", fn->name); 
+    printf("%s:\n", fn->name);
+    funcname = fn->name;
 
-  // prologue
-  printf("  push rbp\n");
-  printf("  mov rbp, rsp\n");
-  printf("  sub rsp, %d\n", prog->stack_size);
+    // prologue
+    printf("  push rbp\n");
+    printf("  mov rbp, rsp\n");
+    printf("  sub rsp, %d\n", fn->stack_size);
 
-  // Emit code ※ prog->node ==  head.next
-  for (Node *node = prog->node; node; node = node->next) {
+  // Emit code 
+  for (Node *node = fn->node; node; node = node->next) 
 #ifdef DEBUG
     node->next == 0 ? printf("True\n"): printf("False\n") ;
     printf("アドレス= %p\n", node);
@@ -206,10 +210,11 @@ void codegen(Program *prog) {
 #endif
     gen(node);
   //printf("  pop rax\n"); // 複文ならばラスト文以外の結果は捨てるということか？
-  }
+  
   // epilogue
-  printf("  .Lreturn:\n");
+  printf(".Lreturn.%s:\n", funcname);
   printf("  mov rsp, rbp\n");
   printf("  pop rbp\n");
   printf("  ret\n");
+  }
 }
