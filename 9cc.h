@@ -59,9 +59,14 @@ Token *tokenize(char *p);
 typedef struct Var Var;
 
 struct Var {
-    Var *next;
     char *name; // Variable name
     int offset; // Offset from RBP
+};
+
+typedef struct VarList VarList;
+struct VarList {
+  VarList *next;
+  Var *var;
 };
 
 // AST node 
@@ -85,7 +90,6 @@ typedef enum {
   ND_VAR,       //  Variable 
   ND_NUM,       // 整数 integer
 } NodeKind;
-
 
 typedef struct Node Node;
 
@@ -120,8 +124,9 @@ typedef struct Function Function;
 struct Function {
     Function *next;
     char *name;
+    VarList *params;
     Node *node; 
-    Var *locals;
+    VarList *locals;
     int stack_size;
     };
 

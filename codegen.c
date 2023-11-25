@@ -201,20 +201,28 @@ void codegen(Function *prog) {
     printf("  mov rbp, rsp\n");
     printf("  sub rsp, %d\n", fn->stack_size);
 
-  // Emit code 
-  for (Node *node = fn->node; node; node = node->next) 
-#ifdef DEBUG
-    node->next == 0 ? printf("True\n"): printf("False\n") ;
-    printf("アドレス= %p\n", node);
-    (Node *) node;
-#endif
-    gen(node);
-  //printf("  pop rax\n"); // 複文ならばラスト文以外の結果は捨てるということか？
+    // Push arguments to the stack
+    int i = 0;
+    for (VarList *vl = fn->params; vl; vl = vl->next) {
+      Var *var = vl->var;
+      printf("  mov [rbp-%d], %s\n", var->offset, argreg[i++]);
+    }
+
+
+    // Emit code 
+    for (Node *node = fn->node; node; node = node->next) 
+    #ifdef DEBUG
+      node->next == 0 ? printf("True\n"): printf("False\n") ;
+      printf("アドレス= %p\n", node);
+      (Node *) node;
+    #endif
+      gen(node);
+    //printf("  pop rax\n"); // 複文ならばラスト文以外の結果は捨てるということか？
   
-  // epilogue
-  printf(".Lreturn.%s:\n", funcname);
-  printf("  mov rsp, rbp\n");
-  printf("  pop rbp\n");
-  printf("  ret\n");
+    // epilogue
+    printf(".Lreturn.%s:\n", funcname);
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
+    printf("  ret\n");
   }
 }
