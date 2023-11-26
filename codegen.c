@@ -13,7 +13,7 @@ void gen_addr(Node *node) {
     printf("  push rax\n");
     return;
   }
-  error("左辺値ではありません");
+  error_tok(node->tok, "左辺値ではありません");
 }
 
 void load() {

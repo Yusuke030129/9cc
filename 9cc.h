@@ -37,7 +37,9 @@ extern Token *token;
 
 void error(char *fmt, ...) ;
 void error_at(char *loc, char *fmt, ...);
-bool consume(char *op);
+void error_tok(Token *tok, char *fmt, ...);
+// bool consume(char *op);
+Token *consume(char *op);
 char *strndup(char *p, int len);
 Token *consume_ident();
 void expect(char *op);
@@ -97,6 +99,7 @@ typedef struct Node Node;
 struct Node {
   NodeKind kind; // ノードの型
   Node *next;
+  Token *tok; // Representative token
 
   Node *lhs;     // 左辺
   Node *rhs;     // 右辺
@@ -131,9 +134,9 @@ struct Function {
     };
 
 
-Node *new_node(NodeKind kind);
-Node *new_binary(NodeKind kind, Node *lhs, Node *rhs);
-Node *new_num(int val);
+Node *new_node(NodeKind kind, Token *tok);
+Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok);
+Node *new_num(int val, Token *tok);
 
 Function  *program();
 

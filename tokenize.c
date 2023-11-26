@@ -14,9 +14,22 @@ void error(char *fmt, ...) {
   va_start(ap, fmt);
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
+  va_end(ap);
   exit(1);
 }
 
+// Reports an error location and exit.
+void verror_at(char *loc, char *fmt, va_list ap) {
+  int pos = loc - user_input;
+  fprintf(stderr, "%s\n", user_input);
+  fprintf(stderr, "%*s", pos, " "); // pos個の空白を出力
+  fprintf(stderr, "^ ");
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
+  exit(1);
+}
+
+// Reports an error location and exit.
 // エラー箇所を報告する関数
 // このとき，位置を算出するために，事前に入力コード全体の文字配列の先頭ポインタを持つuser_inputが存在し，
 // それと，error_atにて渡される今現在見ている文字のポインタlocの差を取って，何文字目なのかを算出している
@@ -27,13 +40,20 @@ void error(char *fmt, ...) {
 void error_at(char *loc, char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
+  verror_at(loc, fmt, ap);
+  va_end(ap);
+}
 
-  int pos = loc - user_input;
-  fprintf(stderr, "%s\n", user_input);
-  fprintf(stderr, "%*s", pos, " "); // pos個の空白を出力
-  fprintf(stderr, "^ ");
+// Reports an error location and exit.
+void error_tok(Token *tok, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  if (tok)
+    verror_at(tok->str, fmt, ap);
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
+  va_end(ap);
+
   exit(1);
 }
 
@@ -46,13 +66,13 @@ char *strndup(char *p, int len) {
 
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて
 // 真を返す。それ以外の場合には偽を返す。
-bool consume(char *op) {
+Token *consume(char *op) {
   if (token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len))
-    return false;
-  Token *tmp = token;
-  token = token->next;
-  free(tmp);
-  return true;
+    return NULL;
+  Token *tmp = token; // メモリ解放処理→エラー情報のためつかうことに...
+  token = token->next; // ひとつ進める
+//  free(tmp); // メモリ解放処理
+  return tmp; // トークン情報をノードへ格納
 }
 
 Token *consume_ident() {
@@ -67,7 +87,7 @@ Token *consume_ident() {
 // それ以外の場合にはエラーを報告する。
 void expect(char *op) {
   if (token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len))
-    error_at(token->str, "'%c'ではありません", op);
+    error_tok(token, "'%c'ではありません", op);
   token = token->next;
 }
 
@@ -75,7 +95,7 @@ void expect(char *op) {
 // それ以外の場合にはエラーを報告する。
 int expect_number() {
   if (token->kind != TK_NUM)
-    error_at(token->str,"数ではありません");
+    error_tok(token, "数ではありません");
   int val = token->val;
   token = token->next;
   return val;
@@ -85,7 +105,7 @@ int expect_number() {
 // Ensure that the current token is TK_IDENT.
 char *expect_ident() {
   if (token->kind != TK_IDENT)
-    error_at(token->str, "expected an identifier");
+    error_tok(token, "expected an identifier");
   char *s = strndup(token->str, token->len);
   token = token->next;
   return s;
