@@ -290,7 +290,7 @@ Node *mul() {
   }
 }
 
-// unary = ("+" | "-")? unary
+// unary = ("+" | "-" | "*" | "&")? unary
 //       | primary
 Node *unary() {
   Token *tok;
@@ -298,6 +298,10 @@ Node *unary() {
     return unary();
   if (tok = consume("-"))
     return new_binary(ND_SUB, new_num(0, tok), unary(), tok); // 0 - primary で反転  何度繰り返しても結果は -が偶数 =>  lhs 0  -  rhs  (0 - primary) =  primary  -が奇数 lhs  x -  rhs primary = - primary
+  if (tok = consume("&"))
+    return new_unary(ND_ADDR, unary(), tok); 
+  if (tok = consume("*"))
+    return new_unary(ND_DEREF, unary(), tok); 
   return primary();
 }
 
