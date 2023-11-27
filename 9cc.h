@@ -9,6 +9,8 @@
 #include <string.h>
 
 
+typedef struct Type Type;
+
 //
 //  tokenize.c
 //
@@ -101,6 +103,7 @@ typedef struct Node Node;
 struct Node {
   NodeKind kind; // ノードの型
   Node *next;
+  Type *ty;      // Type, e.g. int or pointer to int
   Token *tok; // Representative token
 
   Node *lhs;     // 左辺
@@ -142,6 +145,19 @@ Node *new_num(int val, Token *tok);
 
 Function  *program();
 
+//
+// typing.c
+//
+
+typedef enum { TY_INT, TY_PTR} Typekind;
+
+struct Type {
+  Typekind kind;
+  Type *base;
+};
+
+
+void add_type(Function *prog);
 //
 // codegen.c
 //
