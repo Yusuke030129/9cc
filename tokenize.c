@@ -64,11 +64,23 @@ char *strndup(char *p, int len) {
     return buf;
 }
 
+// Return true if the current token matches a given string.
+// チラ見
+Token *peek(char *s) {
+ if (token->kind != TK_RESERVED || strlen(s) != token->len || memcmp(token->str, s, token->len))
+  return NULL;
+ return token;
+}
+// Consumes the current token if it matches a given string.
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて
 // 真を返す。それ以外の場合には偽を返す。
-Token *consume(char *op) {
-  if (token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len))
+Token *consume(char *s) {
+  if (!peek(s))
     return NULL;
+  // peekへ分割
+  //if (token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len))
+  //return NULL;
+
   Token *tmp = token; // メモリ解放処理→エラー情報のためつかうことに...
   token = token->next; // ひとつ進める
 //  free(tmp); // メモリ解放処理
@@ -83,11 +95,14 @@ Token *consume_ident() {
   return t;
 }
 
+// Ensure that the current token is a given string.
 // 次のトークンが期待している記号のときには、トークンを1つ読み進める。
 // それ以外の場合にはエラーを報告する。
-void expect(char *op) {
-  if (token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len))
-    error_tok(token, "'%c'ではありません", op);
+void expect(char *s) {
+  if (!peek(s))
+    error_tok(token, "'%c'ではありません", s);
+  // peekへ分割
+  // if (token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len))
   token = token->next;
 }
 
@@ -144,7 +159,7 @@ bool is_alnum(char c) {
 char *starts_with_reserved(char *p) {
   // Keyword
   // 静的なローカル変数を初期化子で初期化 静的なローカル変数の初期化は初回のみ行われる
-  static char *kw[] = {"return", "if", "else", "while", "for"};
+  static char *kw[] = {"return", "if", "else", "while", "for", "int"};
 
   for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
      int len = strlen(kw[i]);
