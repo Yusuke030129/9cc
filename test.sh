@@ -11,22 +11,29 @@ cat <<-EOF | gcc -xc -c -o tmp2.o -
 }
 EOF
 
+# "-d" をフラグとしてgvarに代入
+_LDFLAG="$1"
+
 # DEBUGモード
-if [ "$#" = "1" ] && [ "$1" = "-d" ]; then
-    CPPFLAGS="-DDEBUG";
-    LDFLAGS="-static"
-    gcc $LDFLAGS $CPPFLAGS -o chibicc main.c parse.c codegen.c tokenize.c;
-    ./9cc "1 + 1;1 + 1; 1 + 1;" > test.s;
-    cat test.s;
-    exit 0;
-fi
+#if [ "$#" = "1" ] && [ "$1" = "-d" ]; then
+#    CPPFLAGS="-DDEBUG";
+#    LDFLAGS="-static"
+#    gcc $LDFLAGS $CPPFLAGS -o chibicc main.c parse.c codegen.c tokenize.c;
+#    ./9cc "1 + 1;1 + 1; 1 + 1;" > test.s;
+#    cat test.s;
+#    exit 0;
+#fi
 
 assert() {
   expected="$1"
   input="$2"
   ./9cc "$input" > tmp.s
 #  gcc -static -o tmp tmp.s
-  gcc -static -o tmp tmp.s tmp2.o
+  if [ "$_LDFLAG" = "-dl" ]; then
+    gcc -o tmp tmp.s tmp2.o
+  else
+    gcc -static -o tmp tmp.s tmp2.o
+  fi
   ./tmp
   actual="$?"
 
@@ -130,5 +137,19 @@ assert 3 'int main() { int x[2][3]; int *y=x; *(y+3)=3; return **(x+1); }'
 assert 4 'int main() { int x[2][3]; int *y=x; *(y+4)=4; return *(*(x+1)+1); }'
 assert 5 'int main() { int x[2][3]; int *y=x; *(y+5)=5; return *(*(x+1)+2); }'
 assert 6 'int main() { int x[2][3]; int *y=x; *(y+6)=6; return **(x+2); }'
+
+assert 3 'int main() { int x[3]; *x=3; x[1]=4; x[2]=5; return *x; }'
+assert 4 'int main() { int x[3]; *x=3; x[1]=4; x[2]=5; return *(x+1); }'
+assert 5 'int main() { int x[3]; *x=3; x[1]=4; x[2]=5; return *(x+2); }'
+assert 5 'int main() { int x[3]; *x=3; x[1]=4; x[2]=5; return *(x+2); }'
+assert 5 'int main() { int x[3]; *x=3; x[1]=4; 2[x]=5; return *(x+2); }'
+
+assert 0 'int main() { int x[2][3]; int *y=x; y[0]=0; return x[0][0]; }'
+assert 1 'int main() { int x[2][3]; int *y=x; y[1]=1; return x[0][1]; }'
+assert 2 'int main() { int x[2][3]; int *y=x; y[2]=2; return x[0][2]; }'
+assert 3 'int main() { int x[2][3]; int *y=x; y[3]=3; return x[1][0]; }'
+assert 4 'int main() { int x[2][3]; int *y=x; y[4]=4; return x[1][1]; }'
+assert 5 'int main() { int x[2][3]; int *y=x; y[5]=5; return x[1][2]; }'
+assert 6 'int main() { int x[2][3]; int *y=x; y[6]=6; return x[2][0]; }'
 
 echo OK
