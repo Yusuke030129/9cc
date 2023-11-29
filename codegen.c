@@ -23,6 +23,11 @@ void gen_addr(Node *node) {
   error_tok(node->tok, "左辺値ではありません");
 }
 
+void gen_lval(Node *node) {
+  if (node->ty->kind == TY_ARRAY)
+    error_tok(node->tok, "not an lvalue");
+  gen_addr(node);
+}
 void load() {
   printf("  pop rax\n");
   printf("  mov rax, [rax]\n");
@@ -45,8 +50,17 @@ void gen(Node *node) {
     case ND_NUM:
       printf("  push %d\n", node->val);
       return;
+    case ND_EXPR_STMT:
+      gen(node->lhs);
+      printf("  add rsp, 8\n"); // 前回のpopで捨てるのと同じ動作(raxには結果がロードされたまま)。最後の文ならばcopdegen()のforを抜けてロードされているraxをそのままretで返す。
+      return;
+    case ND_VAR:
+      gen_addr(node);
+      if (node->ty->kind  != TY_ARRAY)
+        load();
+      return;
     case ND_ASSIGN:
-      gen_addr(node->lhs);
+      gen_lval(node->lhs);
       gen(node->rhs);
       store();
       return;
@@ -55,11 +69,8 @@ void gen(Node *node) {
       return;
     case ND_DEREF:
       gen(node->lhs);
-      load();
-      return;
-    case ND_VAR:
-      gen_addr(node);
-      load();
+      if (node->ty->kind  != TY_ARRAY)
+        load();
       return;
     case ND_IF: { // 可読性のブロック？
       int seq = labelseq++;
@@ -153,10 +164,6 @@ void gen(Node *node) {
 //    -- printf("  jmp .Lreturn\n");
       printf("  jmp .Lreturn.%s\n", funcname);
       return;
-    case ND_EXPR_STMT:
-      gen(node->lhs);
-      printf("  add rsp, 8\n"); // 前回のpopで捨てるのと同じ動作(raxには結果がロードされたまま)。最後の文ならばcopdegen()のforを抜けてロードされているraxをそのままretで返す。
-      return;
 }
 
   gen(node->lhs); // AST NODE の先頭の数値までGO(先頭ノードの数値をPRINTF PUSH→gen(node->rhs)→以下pripopriposwitch 最後に  pripuを 末尾ノードまでN回繰り返し)
@@ -167,13 +174,13 @@ void gen(Node *node) {
 
   switch (node->kind) {
   case ND_ADD:
-    if (node->ty->kind == TY_PTR)
-      printf("  imul rdi, 8\n");
+    if (node->ty->base)
+      printf("  imul rdi, %d\n", size_of(node->ty->base));
     printf("  add rax, rdi\n");
     break;
   case ND_SUB:
-    if (node->ty->kind == TY_PTR)
-      printf("  imul rdi, 8\n");
+    if (node->ty->base)
+      printf("  imul rdi, %d\n", size_of(node->ty->base));
     printf("  sub rax, rdi\n");
     break;
   case ND_MUL:
