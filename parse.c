@@ -395,8 +395,10 @@ Node *func_args() {
 // -primary = num | "(" expr ")"
 // -primary = "(" expr ")" | ident | num
 // -primary = "(" expr ")" | ident args? | num
-// +primary = "(" expr ")" | ident func-args? | num
+// -primary = "(" expr ")" | ident func-args? | num
+// +primary = "(" expr ")" | "sizeof" unary | ident func-args? | Num
 Node *primary() {
+  Token *tok;
   // 次のトークンが"("なら、"(" expr ")"のはず
   if (consume("(")) {
     Node *node = expr();
@@ -404,7 +406,9 @@ Node *primary() {
     return node;
   }
 
-  Token *tok;
+  if (tok = consume("sizeof")) 
+    return new_unary(ND_SIZEOF, unary(), tok);
+
   if (tok = consume_ident()) {
     if (consume("(")) {
       Node *node = new_node(ND_FUNCALL, tok);
