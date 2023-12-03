@@ -61,13 +61,17 @@ Token *tokenize(char *p);
 // parse.c
 //
 
-// Local variable
+// -Local variable
+// Variable
 typedef struct Var Var;
 
 struct Var {
-    char *name; // Variable name
-    Type *ty;   // Type
-    int offset; // Offset from RBP
+  char *name;   // Variable name
+  Type *ty;     // Type
+  bool is_local; // local or global
+  
+  // Local variable
+  int offset; // Offset from RBP
 };
 
 typedef struct VarList VarList;
@@ -144,11 +148,19 @@ struct Function {
     };
 
 
+//-Function  *program();
+
+typedef struct {
+  VarList *globals;
+  Function *fns;
+
+} Program;
+
+Program *program();
+
 Node *new_node(NodeKind kind, Token *tok);
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok);
 Node *new_num(int val, Token *tok);
-
-Function  *program();
 
 //
 // typing.c
@@ -167,11 +179,12 @@ Type *pointer_to(Type *base);
 Type *array_of(Type *base , int size);
 int size_of(Type *ty);
 
-void add_type(Function *prog);
+void add_type(Program *prog);
 //
 // codegen.c
 //
 
 void gen(Node *node);
-void codegen(Function *prog);
+//-void codegen(Function *prog);
+void codegen(Program *prog);
 #endif
